@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataAI Pro - معالج البيانات الذكي</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- PapaParse قراءة ملفات CSV -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <style> body { font-family: 'Cairo', sans-serif; } </style>
+</head>
+<body class="bg-slate-900 text-white min-h-screen flex flex-col items-center justify-center p-4">
+
+    <div class="max-w-3xl w-full bg-slate-800 rounded-2xl shadow-2xl p-8 border border-slate-700">
+        
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-500 mb-2">
+                DataAI Pro 🚀
+            </h1>
+            <p class="text-slate-400">ارفع ملف بياناتك (CSV)، واكتب طلبك، وخلّي المتصفح يعالجهالك في ثوانٍ!</p>
+        </div>
+
+        <!-- Form -->
+        <form id="processForm" class="space-y-6">
+            
+            <!-- Upload Box -->
+            <div class="border-2 border-dashed border-slate-600 rounded-xl p-8 text-center hover:border-blue-500 transition cursor-pointer bg-slate-900/50">
+                <input type="file" id="csvFile" accept=".csv" class="hidden">
+                <label for="csvFile" class="cursor-pointer flex flex-col items-center">
+                    <svg class="w-12 h-12 text-blue-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                    </svg>
+                    <span class="text-lg font-medium text-slate-200">اضغط لرفع ملف CSV أو اسحبه هنا</span>
+                    <span id="fileName" class="text-xs text-blue-400 mt-2 font-semibold"></span>
+                </label>
+            </div>
+
+            <!-- Prompt -->
+            <div>
+                <label class="block text-sm font-medium text-slate-300 mb-2">الأمر المطلوب تنفيذه على البيانات:</label>
+                <input type="text" id="userPrompt" class="w-full rounded-xl bg-slate-900 border border-slate-700 p-4 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="مثال: تنظيف البيانات، حذف الصفوف الفارغة...">
+            </div>
+
+            <!-- Submit -->
+            <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg transition">
+                معالجة البيانات الآن ⚡
+            </button>
+        </form>
+
+        <!-- Result -->
+        <div id="resultSection" class="mt-8 hidden border-t border-slate-700 pt-6 text-center">
+            <h3 class="text-xl font-bold text-green-400 mb-3">✅ تمت المعالجة بنجاح!</h3>
+            <p id="statsText" class="text-slate-300 text-sm mb-4"></p>
+            <a id="downloadBtn" class="inline-block bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-xl transition cursor-pointer">
+                تحميل الملف المعالج 📥
+            </a>
+        </div>
+
+    </div>
+
+    <script>
+        const csvFileInput = document.getElementById('csvFile');
+        const fileNameSpan = document.getElementById('fileName');
+        const processForm = document.getElementById('processForm');
+        const resultSection = document.getElementById('resultSection');
+        const statsText = document.getElementById('statsText');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        let parsedData = [];
+        let fileOriginalName = "";
+
+        csvFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                fileOriginalName = file.name;
+                fileNameSpan.textContent = "الملف المختار: " + fileOriginalName;
+                
+                Papa.parse(file, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        parsedData = results.data;
+                    }
+                });
+            }
+        });
+
+        processForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (parsedData.length === 0) {
+                alert('من فضلك اختر ملف CSV صحيح أولاً!');
+                return;
+            }
+
+            // تطبيق معالجة بسيطة (حذف الصفوف الفارغة أو تنظيم البيانات)
+            const cleanedData = parsedData.filter(row => {
+                return Object.values(row.some(val => val !== ""));
+            });
+
+            statsText.textContent = `إجمالي الصفوف بعد التنظيم: ${parsedData.length} صف.`;
+            resultSection.classList.remove('hidden');
+
+            // تجهيز زر التحميل لملف جديد
+            const csv = Papa.unparse(parsedData);
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            
+            downloadBtn.href = url;
+            downloadBtn.download = "processed_" + fileOriginalName;
+        });
+    </script>
+</body>
+</html>
